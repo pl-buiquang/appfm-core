@@ -39,7 +39,7 @@ object ServiceManager extends LazyLogging{
     service
   }
 
-  def initService(serviceName:String,confMap:java.util.Map[String,Any],confFile:java.io.File)(implicit checkifexist:Boolean=true):Boolean={
+  def initService(serviceName:String,confMap:java.util.Map[String,Any],confFile:java.io.File)(implicit checkifexist:Boolean=false):Boolean={
     try{
       var service = new Service(confFile.getCanonicalPath,
         ModuleDef.initName(serviceName,confMap),
@@ -56,6 +56,10 @@ object ServiceManager extends LazyLogging{
             throw new Exception("Service already exist, defined in "+m.definitionPath)
           }else{
             service = initServiceCmds(service,confMap)
+            if(m.isRunning()){
+              service.stop()
+              service.start()
+            }
             services = services.updated(serviceName,service)
           }
           true

@@ -147,7 +147,6 @@ object ModuleManager extends LazyLogging{
   def reload()={
     modules = Map[String,ModuleDef]()
     modulestree = ModNode("/",List[ModTree]())
-    ServiceManager.services = Map[String,Service]()
     init()
   }
 
