@@ -649,7 +649,7 @@ abstract class AbstractProcess(val parentProcess:Option[AbstractProcess],val id 
     socket match {
       case Some(sock) => {
         //logger.debug("Sending completion signal")
-        sock.send(new ValidProcessMessage(moduleval.namespace,"FINISHED",catchUpdateParentEnvErrorMessage))
+        sock.send(new ValidProcessMessage(this.id.toString,"FINISHED",catchUpdateParentEnvErrorMessage))
         sock.close()
       }
       case None => {
@@ -697,7 +697,7 @@ class ModuleProcess(override val moduleval:ModuleVal,override val parentProcess:
           // TODO message should contain new env data?
           // anyway update env here could be good since there is no need to lock...
           if(exitval!="0"){
-            throw new Exception(sender+" failed with exit value "+exitval)
+            throw new Exception(runningModules(sender).resultnamespace+" failed with exit value "+exitval)
           }
           completedModules += (sender -> runningModules(sender))
         }
@@ -1109,6 +1109,12 @@ class MAPProcess(override val moduleval:MAPVal,override val parentProcess:Option
     val n : Int= values("completed").asInstanceOf[Int]
     values += ("chunksize" -> 1)
     values += ("completed" -> (n+1))
+    var list = values("process").asInstanceOf[List[AbstractProcess]]
+    message match {
+      case ValidProcessMessage(sender,status,exitval)=>{
+        values += ("process" -> list.filterNot((el)=>{el.id.toString==sender.trim}))
+      }
+    }
     progress = (n+1).asInstanceOf[Double]/values("filteredDir").asInstanceOf[Array[java.io.File]].length
   }
 
@@ -1185,9 +1191,9 @@ class MAPProcess(override val moduleval:MAPVal,override val parentProcess:Option
         val process = new AnonymousModuleProcess(moduleval, Some(this))
         //childrenProcess ::= process.id
         //this.saveStateToDB()
-        /*var list = values("process").asInstanceOf[List[AbstractProcess]]
-      list ::= process
-      values += ("process" -> list)*/
+        var list = values("process").asInstanceOf[List[AbstractProcess]]
+        list ::= process
+        values += ("process" -> list)
         values += ("pcount" -> (1 + values("pcount").asInstanceOf[Int]))
         process.setRun(newenv, moduleval.namespace, Some(processSockAddr), true)
         ProcessManager.addToQueue(process)
@@ -1265,6 +1271,12 @@ class WALKMAPProcess(override val moduleval:WALKMAPVal,override val parentProces
     val n : Int= values("completed").asInstanceOf[Int]
     values += ("chunksize" -> 1)
     values += ("completed" -> (n+1))
+    var list = values("process").asInstanceOf[List[AbstractProcess]]
+    message match {
+      case ValidProcessMessage(sender,status,exitval)=>{
+        values += ("process" -> list.filterNot((el)=>{el.id.toString==sender.trim}))
+      }
+    }
     val walker = values("walker").asInstanceOf[Utils.FileWalker]
     progress = (n+1).asInstanceOf[Double]/(values("pcount").asInstanceOf[Int]+walker.curCount)
   }
@@ -1328,9 +1340,9 @@ class WALKMAPProcess(override val moduleval:WALKMAPVal,override val parentProces
         val process = new AnonymousModuleProcess(moduleval,Some(this))
         //childrenProcess ::= process.id
         //this.saveStateToDB()
-        /*var list = values("process").asInstanceOf[List[AbstractProcess]]
+        var list = values("process").asInstanceOf[List[AbstractProcess]]
         list ::= process
-        values += ("process" -> list)*/
+        values += ("process" -> list)
         values += ("pcount" -> (1+values("pcount").asInstanceOf[Int]))
         process.setRun(newenv,moduleval.namespace,Some(processSockAddr),true)
         ProcessManager.addToQueue(process)
