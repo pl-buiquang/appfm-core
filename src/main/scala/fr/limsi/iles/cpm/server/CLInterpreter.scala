@@ -157,6 +157,18 @@ object CLInterpreter extends LazyLogging{
         case "queue" => {
           ProcessManager.debugPrint()
         }
+        case "kill" => {
+          if(args.size > 1){
+            val proc = ProcessRunManager.getProcess(UUID.fromString(args(1)))
+            proc.status match {
+              case Exited(code)=>{}
+              case _ => proc.kill()
+            }
+            "ok"
+          }else{
+            cliError("Missing pid")
+          }
+        }
         case "ls" => try {
           val all = args.exists(_=="-a")
           val head = args.exists(_=="-h")
@@ -204,14 +216,14 @@ object CLInterpreter extends LazyLogging{
             ProcessRunManager.getProcess(UUID.fromString(args(1))).serializeToJSON().toString(2)
 
           }else{
-            "Missing pid"
+            cliError("Missing pid")
           }
         }catch {case e:Throwable => """{"error" : """"+e.getMessage+"\"}"}
         case "del" => try{
           if(args.size > 1){
             ProcessRunManager.deleteProcess(UUID.fromString(args(1)))
           }else{
-            "Missing pid"
+            cliError("Missing pid")
           }
         }catch {case e:Throwable => """{"error" : """"+e.getMessage+"\"}"}
         case "status" => try{
@@ -232,7 +244,7 @@ object CLInterpreter extends LazyLogging{
               detailedstatus
             }
           }else{
-            "Missing pid"
+            cliError("Missing pid")
           }
         }catch {case e:Throwable => """{"error" : """"+e.getMessage+"\"}"}
         case "log" => {
@@ -245,7 +257,7 @@ object CLInterpreter extends LazyLogging{
               process.getLog();
             }
           }else{
-            "Missing pid"
+            cliError("Missing pid")
           }
         }
         case "view" => {
@@ -279,7 +291,7 @@ object CLInterpreter extends LazyLogging{
             }
             result
           }else{
-            "Missing pid"
+            cliError("Missing pid")
           }
         }
         case _ => "Invalid argument"
@@ -333,6 +345,26 @@ object CLInterpreter extends LazyLogging{
           }else{
             ModuleManager.ls(onlyname)
           }
+        }
+        case "search" => {
+          val jsonoutput = args.exists(_=="--json")
+          if(data.isEmpty){
+            throw new Exception("missing query for search module end point")
+          }
+          val results = ModuleManager.search(data.get)
+          if(jsonoutput){
+            val json = new JSONArray()
+            results.foreach(m => {
+              json.put(m.name)
+
+            })
+            json.toString(2)
+          }else{
+            results.foldLeft("")((agg,el)=>{
+              agg + "\n" + el.name
+            }).trim
+          }
+
         }
         case "run" => {
           val synced = !args.exists(_=="--sync")

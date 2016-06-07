@@ -98,6 +98,49 @@ object ModuleManager extends LazyLogging{
     logger.info("Finished initializing modules")
   }
 
+  def search(query:String):List[ModuleDef]={
+    val keywords = query.split("""\s+""")
+    modules.foldLeft(List[((Int,Int,Int),ModuleDef)]())((agg,el)=>{
+      val name = el._1
+      val desc = el._2.desc
+      val other = el._2.inputs.values.foldLeft("")((agg,input)=>{
+        agg + " " + input.desc.getOrElse("")
+      }) + el._2.outputs.values.foldLeft("")((agg,output)=>{
+        agg + " " + output.desc.getOrElse("")
+      })
+      var matchCountName = 0
+      var matchCountDesc = 0
+      var matchCountOther = 0
+      keywords.foreach((word)=>{
+        var offset : Int= 0
+        var index = -1
+        while ({index = name.substring(offset).toLowerCase.indexOf(word.toLowerCase); index} != -1){
+          matchCountName += 1
+          offset += index+word.length
+        }
+        offset = 0
+        index = -1
+        while ({index = desc.substring(offset).toLowerCase.indexOf(word.toLowerCase); index} != -1){
+          matchCountDesc += 1
+          offset += index+word.length
+        }
+        offset = 0
+        index = -1
+        while ({index = other.substring(offset).toLowerCase.indexOf(word.toLowerCase); index} != -1){
+          matchCountOther += 1
+          offset += index+word.length
+        }
+      })
+      ((matchCountName,matchCountDesc,matchCountOther),el._2) :: agg
+    }).filter((el)=>{
+      el._1._1 > 0 || el._1._2 > 0 || el._1._3 > 0
+    }).sortWith((a,b)=>{
+      a._1._1 > b._1._1 || (a._1._1 == b._1._1 && a._1._2 > b._1._2 || (a._1._2 == b._1._2 && a._1._3 > b._1._3))
+    }).map((el)=>{
+      el._2
+    })
+  }
+
   /**
    * Reload module definition
    */

@@ -205,6 +205,7 @@ object ProcessRunManager extends LazyLogging{
 }
 
 class MasterProcessShell(process:AbstractProcess,detached:Boolean,ns:String,env:RunEnv){
+  var killed = false
   def run() = {
     EventManager.emit(new EventMessage("process-started",process.id.toString,process.moduleval.moduledef.name))
     if(detached){

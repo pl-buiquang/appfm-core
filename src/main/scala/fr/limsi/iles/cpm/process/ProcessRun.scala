@@ -673,12 +673,14 @@ class ModuleProcess(override val moduleval:ModuleVal,override val parentProcess:
   var runningModules = Map[String,AbstractProcess]()
   var completedModules = Map[String,AbstractProcess]()
   val lock = new Object()
+  private var _kill = false
 
   override def kill():Unit={
     lock.synchronized{
       runningModules.foreach((el)=>{
         el._2.kill()
       })
+      _kill = true
     }
   }
 
@@ -714,6 +716,9 @@ class ModuleProcess(override val moduleval:ModuleVal,override val parentProcess:
   override def step() = {
     //logger.debug("Trying to run next submodule for module "+moduleval.moduledef.name)
     lock.synchronized{
+      if(_kill){
+        throw new Exception("killed")
+      }
       val module = moduleval.moduledef.exec(completedModules.size)
       if(module.isExecutable(env)){
         //logger.debug("Launching "+module.moduledef.name)
@@ -865,12 +870,14 @@ class CMDProcess(override val moduleval:CMDVal,override val parentProcess:Option
   var launched = ""
   var processCMDMessage : ProcessCMDMessage = null
   private var _lock = new Object()
+  private var _kill = false
 
   override def kill():Unit={
     _lock.synchronized{
       if(processCMDMessage != null){
         ProcessManager.kill(processCMDMessage.id.toString)
       }
+      _kill = true
     }
   }
 
@@ -901,6 +908,9 @@ class CMDProcess(override val moduleval:CMDVal,override val parentProcess:Option
   override def step(): Unit = {
     //logger.debug("Launching CMD "+env.resolveValueToString(moduleval.inputs("CMD").asString()))
     _lock.synchronized{
+      if(_kill){
+        throw new Exception("killed")
+      }
       var stderr = ""
       var stdout = ""
       val defdir = env.getRawVar("_DEF_DIR").get.asString()
@@ -1034,7 +1044,7 @@ class MAPProcess(override val moduleval:MAPVal,override val parentProcess:Option
   override def kill():Unit={
     _lock.synchronized{
       _kill = true
-      var list = values("process").asInstanceOf[List[AbstractProcess]]
+      val list = values("process").asInstanceOf[List[AbstractProcess]]
       list.foreach((p)=>{
         p.kill()
       })
@@ -1153,37 +1163,38 @@ class MAPProcess(override val moduleval:MAPVal,override val parentProcess:Option
 
     var i = 0;
 
-    _lock.synchronized{
-      if(_kill){
+    _lock.synchronized {
+      if (_kill) {
         throw new Exception("killed")
       }
-    }
 
-    //val newenv = values("tmpenv").asInstanceOf[RunEnv]
-    toProcessFiles.foreach(file => {
-      val newenv = env.copy()
-      val dirinfo = this.moduleval.getInput("IN",env)
-      val x = FILE(dirinfo.format,dirinfo.schema)
-      x.fromYaml(file.getCanonicalPath)
-      newenv.setVar("_", x)
-      val module = values("module").asInstanceOf[AnonymousDef]
-      //logger.debug("anonymous created")
-      val moduleval = new ModuleVal("_MAP."+Utils.getNamespace(offset+i),module,Some(Utils.scalaMap2JavaMap(newenv.getVars().mapValues(paramval => {
-        paramval.toYaml()
-      }))))
-      i+=1
-      val process = new AnonymousModuleProcess(moduleval,Some(this))
-      //childrenProcess ::= process.id
-      //this.saveStateToDB()
-      /*var list = values("process").asInstanceOf[List[AbstractProcess]]
+
+      //val newenv = values("tmpenv").asInstanceOf[RunEnv]
+      toProcessFiles.foreach(file => {
+        val newenv = env.copy()
+        val dirinfo = this.moduleval.getInput("IN", env)
+        val x = FILE(dirinfo.format, dirinfo.schema)
+        x.fromYaml(file.getCanonicalPath)
+        newenv.setVar("_", x)
+        val module = values("module").asInstanceOf[AnonymousDef]
+        //logger.debug("anonymous created")
+        val moduleval = new ModuleVal("_MAP." + Utils.getNamespace(offset + i), module, Some(Utils.scalaMap2JavaMap(newenv.getVars().mapValues(paramval => {
+          paramval.toYaml()
+        }))))
+        i += 1
+        val process = new AnonymousModuleProcess(moduleval, Some(this))
+        //childrenProcess ::= process.id
+        //this.saveStateToDB()
+        /*var list = values("process").asInstanceOf[List[AbstractProcess]]
       list ::= process
       values += ("process" -> list)*/
-      values += ("pcount" -> (1+values("pcount").asInstanceOf[Int]))
-      process.setRun(newenv,moduleval.namespace,Some(processSockAddr),true)
-      ProcessManager.addToQueue(process)
-    })
+        values += ("pcount" -> (1 + values("pcount").asInstanceOf[Int]))
+        process.setRun(newenv, moduleval.namespace, Some(processSockAddr), true)
+        ProcessManager.addToQueue(process)
+      })
 
-    offset = to
+      offset = to
+    }
   }
 
 
@@ -1288,11 +1299,7 @@ class WALKMAPProcess(override val moduleval:WALKMAPVal,override val parentProces
   }
 
   override protected[this] def step(): Unit = {
-    _lock.synchronized{
-      if(_kill){
-        throw new Exception("killed")
-      }
-    }
+
 
     val n = values("chunksize").asInstanceOf[Int]
 
@@ -1301,31 +1308,37 @@ class WALKMAPProcess(override val moduleval:WALKMAPVal,override val parentProces
     var i = 0;
 
     val test = new java.io.File(moduleval.getInput("IN",env).asString())
+    _lock.synchronized{
+      if(_kill){
+        throw new Exception("killed")
+      }
 
-    walker.take(n,values("regex").toString).foreach(file => {
-      val newenv = env.copy()
-      val dirinfo = this.moduleval.getInput("IN",env)
-      val x = FILE(dirinfo.format,dirinfo.schema)
-      x.fromYaml(file.getCanonicalPath)
-      newenv.setVar("_", x)
-      val module = values("module").asInstanceOf[AnonymousDef]
-      //logger.debug("anonymous created")
-      val moduleval = new ModuleVal("_WALKMAP."+Utils.getNamespace(offset+i),module,Some(Utils.scalaMap2JavaMap(newenv.getVars().mapValues(paramval => {
-        paramval.toYaml()
-      }))))
-      i+=1
-      val process = new AnonymousModuleProcess(moduleval,Some(this))
-      //childrenProcess ::= process.id
-      //this.saveStateToDB()
-      /*var list = values("process").asInstanceOf[List[AbstractProcess]]
-      list ::= process
-      values += ("process" -> list)*/
-      values += ("pcount" -> (1+values("pcount").asInstanceOf[Int]))
-      process.setRun(newenv,moduleval.namespace,Some(processSockAddr),true)
-      ProcessManager.addToQueue(process)
-    })
+      walker.take(n,values("regex").toString).foreach(file => {
+        val newenv = env.copy()
+        val dirinfo = this.moduleval.getInput("IN",env)
+        val x = FILE(dirinfo.format,dirinfo.schema)
+        x.fromYaml(file.getCanonicalPath)
+        newenv.setVar("_", x)
+        val module = values("module").asInstanceOf[AnonymousDef]
+        //logger.debug("anonymous created")
+        val moduleval = new ModuleVal("_WALKMAP."+Utils.getNamespace(offset+i),module,Some(Utils.scalaMap2JavaMap(newenv.getVars().mapValues(paramval => {
+          paramval.toYaml()
+        }))))
+        i+=1
+        val process = new AnonymousModuleProcess(moduleval,Some(this))
+        //childrenProcess ::= process.id
+        //this.saveStateToDB()
+        /*var list = values("process").asInstanceOf[List[AbstractProcess]]
+        list ::= process
+        values += ("process" -> list)*/
+        values += ("pcount" -> (1+values("pcount").asInstanceOf[Int]))
+        process.setRun(newenv,moduleval.namespace,Some(processSockAddr),true)
+        ProcessManager.addToQueue(process)
+      })
 
-    offset = offset + i
+      offset = offset + i
+    }
+
   }
 }
 
@@ -1337,9 +1350,14 @@ class IFProcess(override val moduleval:IFVal,override val parentProcess:Option[A
   var context : List[AbstractModuleVal] = List[AbstractModuleVal]()
   var launchedMod : AbstractProcess = null
 
+  private var _lock = new Object()
+  private var _kill = false
   override def kill():Unit={
-    if(launchedMod!=null){
-      launchedMod.kill()
+    _lock.synchronized{
+      _kill = true
+      if(launchedMod!=null){
+        launchedMod.kill()
+      }
     }
   }
 
@@ -1365,13 +1383,18 @@ class IFProcess(override val moduleval:IFVal,override val parentProcess:Option[A
   }
 
   override protected[this] def step(): Unit = {
-    val cond = env.resolveValueToString(moduleval.inputs("COND").toYaml())
-    cond.trim match {
-      case "" => executeSubmodules("ELSE")
-      case "0" => executeSubmodules("ELSE")
-      case "false" => executeSubmodules("ELSE")
-      case "False" => executeSubmodules("ELSE")
-      case _ => executeSubmodules("THEN")
+    _lock.synchronized{
+      if(_kill){
+        throw new Exception("killed")
+      }
+      val cond = env.resolveValueToString(moduleval.inputs("COND").toYaml())
+      cond.trim match {
+        case "" => executeSubmodules("ELSE")
+        case "0" => executeSubmodules("ELSE")
+        case "false" => executeSubmodules("ELSE")
+        case "False" => executeSubmodules("ELSE")
+        case _ => executeSubmodules("THEN")
+      }
     }
   }
 
