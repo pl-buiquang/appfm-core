@@ -1086,6 +1086,7 @@ class MAPProcess(override val moduleval:MAPVal,override val parentProcess:Option
 
 
     val prefix = "_MAP."
+    parentEnv.setVar(prefix+"OUT",env.getRawVar("_RUN_DIR").get)
     val prefixlength = prefix.length
     val args = env.getVars()
     //val args = getResult().getVars()
@@ -1288,6 +1289,7 @@ class WALKMAPProcess(override val moduleval:WALKMAPVal,override val parentProces
 
   override protected[this] def updateParentEnv(): Unit = {
     val prefix = "_WALKMAP."
+    parentEnv.setVar(prefix+"OUT",env.getRawVar("_RUN_DIR").get)
     val prefixlength = prefix.length
     val args = env.getVars()
     //val args = getResult().getVars()
