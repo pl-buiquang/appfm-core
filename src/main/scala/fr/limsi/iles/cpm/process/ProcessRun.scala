@@ -693,13 +693,16 @@ class ModuleProcess(override val moduleval:ModuleVal,override val parentProcess:
     message match {
       case ValidProcessMessage(sender,status,exitval) => status match {
         case "FINISHED" => {
+          val finishedmodule = runningModules.find((el)=>{
+            el._2.id.toString == sender
+          })
           //logger.debug(sender + " just finished")
           // TODO message should contain new env data?
           // anyway update env here could be good since there is no need to lock...
           if(exitval!="0"){
-            throw new Exception(runningModules(sender).resultnamespace+" failed with exit value "+exitval)
+            throw new Exception(finishedmodule.get._2.resultnamespace+" failed with exit value "+exitval)
           }
-          completedModules += (sender -> runningModules(sender))
+          completedModules += (sender -> finishedmodule.get._2)
         }
         case s : String => logger.warn("WTF? : "+s)
       }
