@@ -879,6 +879,10 @@ class CMDProcess(override val moduleval:CMDVal,override val parentProcess:Option
     _lock.synchronized{
       if(processCMDMessage != null){
         ProcessManager.kill(processCMDMessage.id.toString)
+        val socket = Server.context.socket(ZMQ.PUSH)
+        socket.connect(this.processSockAddr.replace("*","localhost"))
+        socket.send(new ValidProcessMessage(this.id.toString,"FINISHED","killed"))
+        socket.close()
       }
       _kill = true
     }
@@ -1006,7 +1010,7 @@ class CMDProcess(override val moduleval:CMDVal,override val parentProcess:Option
           //logger.debug(sender + " just finished")
           processCMDMessage.end()
           if(exitval!="0"){
-            throw new Exception(sender+" failed with exit value "+exitval)
+            throw new Exception(this.moduleval.namespace+" failed with exit value "+exitval)
           }
         }
         case s : String => logger.warn("WTF? : "+s)

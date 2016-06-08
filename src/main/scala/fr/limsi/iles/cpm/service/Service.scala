@@ -1,6 +1,8 @@
 package fr.limsi.iles.cpm.service
 
 
+import java.util.concurrent.Executors
+
 import com.typesafe.scalalogging.LazyLogging
 import fr.limsi.iles.cpm.module.parameter.AbstractModuleParameter
 import fr.limsi.iles.cpm.process.{CMDProcess, DockerManager, RunEnv}
@@ -113,8 +115,16 @@ class Service(val definitionPath:String,
     val absolutecmd = cmd.replace("\n"," ").replaceAll("^\\./",getDefDir+"/")
     val cmdtolaunch = "python "+ConfManager.get("cpm_home_dir")+"/"+ConfManager.get("shell_exec_bin")+" "+absolutecmd
 
-    val retvalue = Process(cmdtolaunch,new java.io.File(getDefDir)).!!
-    logger.info("service "+this.name+" started ("+retvalue+")")
+    val executor = Executors.newSingleThreadExecutor()
+    executor.execute(new Runnable {
+      override def run(): Unit = {
+
+
+        Process(cmdtolaunch,new java.io.File(getDefDir)).!!
+
+      }
+    })
+    logger.info("service "+this.name+" started ")
   }
 
   def isRunning():Boolean={
