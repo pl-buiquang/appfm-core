@@ -392,6 +392,7 @@ object ModuleManager extends LazyLogging{
         json.put("source",bs.getLines.foldLeft("")((agg,line)=>agg+"\n"+line))
         bs.close()
         if(modules.contains(name)){
+          json.put("dockerized",modules(name).needsDocker())
           json.put("module",new JSONObject(modules(name).serialize()(true)))
         }
         if(modulesStatus.contains(filepath)){
