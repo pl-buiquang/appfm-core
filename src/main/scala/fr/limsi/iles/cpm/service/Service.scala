@@ -120,7 +120,7 @@ class Service(val definitionPath:String,
       override def run(): Unit = {
 
 
-        Process(cmdtolaunch,new java.io.File(getDefDir)).!!
+        Process(cmdtolaunch,new java.io.File(getDefDir)).!
 
       }
     })
