@@ -441,6 +441,7 @@ object ModuleManager extends LazyLogging{
    * @param f
    */
   private def findModuleConf(curFile:java.io.File,f:java.io.File => Option[String],g:java.io.File=>Boolean) :Option[ModTree]={
+
     if(curFile.isFile){
       if(curFile.getName().endsWith(".module")){
         f(curFile) match {
@@ -456,23 +457,28 @@ object ModuleManager extends LazyLogging{
         None
       }
     }else if(curFile.isDirectory){
-      var list = List[ModTree]()
-      val iterator = curFile.listFiles().iterator
-      while(iterator.hasNext){
-        val file = iterator.next()
-        findModuleConf(file,f,g) match{
-          case Some(x:ModTree)=>{
-            list = x :: list
-          }
-          case None => {
+      if(!Utils.checkValidPath(curFile.getCanonicalPath)){
+        var list = List[ModTree]()
+        val iterator = curFile.listFiles().iterator
+        while(iterator.hasNext){
+          val file = iterator.next()
+          findModuleConf(file,f,g) match{
+            case Some(x:ModTree)=>{
+              list = x :: list
+            }
+            case None => {
 
+            }
           }
         }
-      }
-      if(list.length > 0)
-        Some(ModNode(curFile.getName,list))
-      else
+        if(list.length > 0)
+          Some(ModNode(curFile.getName,list))
+        else
+          None
+      }else{
+        logger.warn("Folder is within corpus/result tree, skipping to avoid too much files to process.")
         None
+      }
     }else{
       logger.warn("File at path "+curFile.getPath+" is neither file nor directory!")
       None
