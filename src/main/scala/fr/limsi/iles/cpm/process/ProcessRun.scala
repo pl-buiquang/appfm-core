@@ -229,7 +229,7 @@ object AbstractProcess extends LazyLogging{
             newargs += (variable -> value)*/
           }
         })
-        if(ready){
+        if(true || ready){
           logger.info("Found")
           val newval = input._2.newEmpty()
           val yamlval = if(moduleval.moduledef.name == "_CMD"){

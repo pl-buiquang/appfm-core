@@ -305,10 +305,6 @@ object ModuleDef extends LazyLogging{
     val regex = VAL(None,None)
     regex.fromYaml(".*")
     x += ("REGEX"->new ModuleParameter[VAL]("VAL",None,None,None,Some(regex)))
-
-    val chunk_size = VAL(None,None)
-    chunk_size.fromYaml("10")
-    x += ("CHUNK_SIZE"->new ModuleParameter[VAL]("VAL",Some("Number of files to be processed in parallel"),None,None,Some(chunk_size)))
     x
   }
 
