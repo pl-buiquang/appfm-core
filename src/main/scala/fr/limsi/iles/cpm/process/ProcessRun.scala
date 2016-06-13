@@ -1409,11 +1409,10 @@ class IFProcess(override val moduleval:IFVal,override val parentProcess:Option[A
         throw new Exception("killed")
       }
       val cond = env.resolveValueToString(moduleval.inputs("COND").toYaml())
-      cond.trim match {
+      cond.trim.toLowerCase() match {
         case "" => executeSubmodules("ELSE")
         case "0" => executeSubmodules("ELSE")
         case "false" => executeSubmodules("ELSE")
-        case "False" => executeSubmodules("ELSE")
         case _ => executeSubmodules("THEN")
       }
     }
