@@ -36,6 +36,24 @@ object ServiceManager extends LazyLogging{
         service.stopcmd = Some(Service.initCMD(YamlElt.fromJava(confMap.get("stop")),service.name+"-stop"))
       }
     }
+    confMap.get("log") match {
+      case null => {
+
+      }
+      case _ => {
+        val log = YamlElt.readAs[String](confMap.get("log"))
+        service.log = log
+      }
+    }
+    confMap.get("test") match {
+      case null => {
+
+      }
+      case _ => {
+        val test = YamlElt.readAs[String](confMap.get("test"))
+        service.test = test
+      }
+    }
     service
   }
 
@@ -94,25 +112,14 @@ object ServiceManager extends LazyLogging{
         if(!service.isRunning()){
           service.start()
         }
+        val serviceEnv = service.initEnv
         service.outputs.foldLeft(Map[String,AbstractParameterVal]())((serviceoutputs,output)=>{
-          serviceoutputs + (service.name+"."+output._1 -> output._2.toAbstractParameterVal())
+          serviceoutputs + (service.name+"."+output._1 -> output._2.toAbstractParameterVal(serviceEnv))
         })
       }
     })
   }
 
-  def exportedVariables():Map[String,AbstractParameterVal]={
-    services.foldLeft(Map[String,AbstractParameterVal]())((exported,service)=>{
-      exported ++ {
-        if(service._2.isRunning()){
-          service._2.outputs.foldLeft(Map[String,AbstractParameterVal]())((serviceoutputs,output)=>{
-            serviceoutputs + (output._1 -> output._2.toAbstractParameterVal())
-          })
-        }else{
-          Map[String,AbstractParameterVal]()
-        }
-      }
-    })
-  }
+
 
 }

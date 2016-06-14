@@ -25,6 +25,9 @@ class Service(val definitionPath:String,
               var stopcmd:Option[CMDVal]
              ) extends LazyLogging{
 
+  var log : Option[String] = None
+  var test : Option[String] = None
+
   private var _isRunning : Boolean = false
   private var runningContainer : Option[String] = None
   private var _lock = new Object()
@@ -33,7 +36,7 @@ class Service(val definitionPath:String,
     (new java.io.File(definitionPath)).getParent
   }
 
-  private def initEnv : RunEnv = {
+  def initEnv : RunEnv = {
     val env = new RunEnv(Map[String,AbstractParameterVal]())
     val resdir = DIR(None,None)
     resdir.fromYaml(ConfManager.get("default_result_dir"))
@@ -137,6 +140,9 @@ class Service(val definitionPath:String,
     val json = new JSONObject()
     json.put("name",name)
     json.put("desc",desc)
+    if(log.isDefined){
+      json.put("log",log.get)
+    }
     json.put("status",_isRunning)
     val outputsjson = new JSONObject()
     outputs.foreach(output=>{

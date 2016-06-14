@@ -3,6 +3,7 @@ package fr.limsi.iles.cpm.module.parameter
 
 import fr.limsi.iles.cpm.module.definition.ModuleDef
 import fr.limsi.iles.cpm.module.value._
+import fr.limsi.iles.cpm.process.RunEnv
 import fr.limsi.iles.cpm.utils.{YamlElt, YamlList, YamlMap, YamlString}
 import org.json.JSONObject
 
@@ -23,9 +24,9 @@ abstract class AbstractModuleParameter{
 
   def createVal(): AbstractParameterVal
 
-  def toAbstractParameterVal():AbstractParameterVal={
+  def toAbstractParameterVal(env:RunEnv):AbstractParameterVal={
     value match{
-      case Some(paramval)=>paramval
+      case Some(paramval)=>paramval.fromYaml(env.resolveValueToYaml(paramval.asString()));paramval
       case None=>createVal()
     }
   }
