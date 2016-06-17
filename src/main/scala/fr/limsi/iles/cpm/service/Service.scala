@@ -39,10 +39,10 @@ class Service(val definitionPath:String,
   def initEnv : RunEnv = {
     val env = new RunEnv(Map[String,AbstractParameterVal]())
     val resdir = DIR(None,None)
-    resdir.fromYaml(ConfManager.get("default_result_dir"))
+    resdir.fromYaml(ConfManager.get("result_dir"))
     env.setVar("_RESULT_DIR",resdir)
-    val corpusdir = DIR(None,None)
-    corpusdir.fromYaml(ConfManager.get("default_corpus_dir"))
+    val corpusdir = LIST[DIR](None,None)
+    corpusdir.fromYaml(ConfManager.get("corpus_dir").asInstanceOf[java.util.ArrayList[String]])
     env.setVar("_CORPUS_DIR",corpusdir)
     val defdir = DIR(None,None)
     defdir.fromYaml(getDefDir)

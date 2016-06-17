@@ -143,6 +143,8 @@ class ModuleDef(
     }
   }
 
+
+
 }
 
 
@@ -469,23 +471,24 @@ object AnonymousDef extends LazyLogging{
   }
 }
 
-object IFDef extends ModuleDef(ConfManager.get("default_module_dir")+"default/_IF.module","_IF","Built-in module that branch two submodules lists depending of an interpreted boolean condition",
+object IFDef extends ModuleDef("_IF.module","_IF","Built-in module that branch two submodules lists depending of an interpreted boolean condition",
   ModuleDef.initIFInputs(),
   ModuleDef.initIFOutputs(),
   Map[String,String](),
   List[AbstractModuleVal]()
 ){
-}
-
-object CMDDef extends ModuleDef(ConfManager.get("default_module_dir")+"/default/_CMD.module","_CMD","Built-in module that run a UNIX commad",ModuleDef.initCMDInputs(),ModuleDef.initCMDOutputs(),Map[String,String](),List[AbstractModuleVal]()){
 
 }
 
-object MAPDef extends ModuleDef(ConfManager.get("default_module_dir")+"/default/_MAP.module","_MAP","Built-in module that map a LIST of FILE in Modules that process a single file",ModuleDef.initMAPInputs(),ModuleDef.initMAPOutputs(),Map[String,String](),List[AbstractModuleVal]()) {
+object CMDDef extends ModuleDef("_CMD.module","_CMD","Built-in module that run a UNIX commad",ModuleDef.initCMDInputs(),ModuleDef.initCMDOutputs(),Map[String,String](),List[AbstractModuleVal]()){
 
 }
 
-object WALKMAPDef extends ModuleDef(ConfManager.get("default_module_dir")+"/default/_WALKMAP.module","_WALKMAP","Built-in module that map each file within a directory to modules that process a single file",ModuleDef.initWALKMAPInputs(),ModuleDef.initWALKMAPOutputs(),Map[String,String](),List[AbstractModuleVal]()) {
+object MAPDef extends ModuleDef("_MAP.module","_MAP","Built-in module that map a LIST of FILE in Modules that process a single file",ModuleDef.initMAPInputs(),ModuleDef.initMAPOutputs(),Map[String,String](),List[AbstractModuleVal]()) {
+
+}
+
+object WALKMAPDef extends ModuleDef("_WALKMAP.module","_WALKMAP","Built-in module that map each file within a directory to modules that process a single file",ModuleDef.initWALKMAPInputs(),ModuleDef.initWALKMAPOutputs(),Map[String,String](),List[AbstractModuleVal]()) {
 
 }
 

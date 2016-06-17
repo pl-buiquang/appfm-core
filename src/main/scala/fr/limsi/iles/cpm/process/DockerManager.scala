@@ -4,6 +4,7 @@ import java.io.{File, PrintWriter}
 import java.util.UUID
 
 import com.typesafe.scalalogging.LazyLogging
+import fr.limsi.iles.cpm.corpus.CorpusManager
 import fr.limsi.iles.cpm.service.ServiceManager
 import fr.limsi.iles.cpm.utils.ConfManager
 
@@ -62,7 +63,10 @@ object DockerManager extends LazyLogging{
   def createContainer(dockerimage:String,foldersync:java.io.File,docker_opts:String) : String = {
     try {
       val mount = "-v " + foldersync.getCanonicalPath + ":" + foldersync.getCanonicalPath
-      val mount2 = " -v /tmp:/tmp -v " + ConfManager.get("default_result_dir") + ":" + ConfManager.get("default_result_dir") + " -v " + ConfManager.get("default_corpus_dir") + ":" + ConfManager.get("default_corpus_dir") + " "
+      val mount2 = " -v /tmp:/tmp -v " + ConfManager.get("result_dir") + ":" + ConfManager.get("result_dir") +
+        CorpusManager.getDirs.foldLeft(" ")((agg,el)=>{
+          agg + "-v "+el+":"+el+" "
+        })
       var mount3 = ""
       /*val list : java.util.ArrayList[String] = ConfManager.get("modules_dir").asInstanceOf[java.util.ArrayList[String]]
       val iterator = list.iterator()

@@ -48,6 +48,7 @@ object CLInterpreter extends LazyLogging{
         case "exec" =>
           interpretExecCommands(args.slice(1,args.length))
         case "reload" => {
+          ConfManager.reload()
           ModuleManager.reload()
           "ok"
         }
@@ -73,7 +74,7 @@ object CLInterpreter extends LazyLogging{
           "Restart cpm"
         case "test" => {
           ModuleManager.modules.foldLeft("")((output,module)=>{
-            output + "\n"+module._1+" : "+module._2.needsDocker().toString
+            output + "\n"+module._1+" : "+ModuleManager.findDependancies(module._2).mkString(",")
           })
         }
         case _ => "No such method!"
@@ -321,8 +322,12 @@ object CLInterpreter extends LazyLogging{
         json
       }
       )
-      settings.put("result_dir",ConfManager.get("default_result_dir").toString)
-      settings.put("corpus_dir",ConfManager.get("default_corpus_dir").toString)
+      settings.put("result_dir",ConfManager.get("result_dir").toString)
+      val corpusdirs = new JSONArray()
+      CorpusManager.getDirs.foreach((corpusdir)=>{
+        corpusdirs.put(corpusdir)
+      })
+      settings.put("corpus_dir",corpusdirs)
       settings.put("docker_enabled",CPM.dockerEnabled)
       val hostname = "hostname".!!.trim()
       settings.put("host",hostname)
@@ -418,7 +423,7 @@ object CLInterpreter extends LazyLogging{
         }
         case "update" => {
           if(args.size > 1 && data.isDefined) {
-            ModuleManager.updateModule(args(1),data.get)
+            ModuleManager.updateModule(args(1),data.get,args.exists(_=="--force"))
           }else{
             "missing arguments"
           }

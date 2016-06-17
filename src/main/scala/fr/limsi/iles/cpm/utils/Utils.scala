@@ -1,15 +1,17 @@
 package fr.limsi.iles.cpm.utils
 
-import java.io.{File, FileFilter, FilenameFilter}
+import java.io.{File, FileFilter, FileInputStream, FilenameFilter}
 import java.net.InetAddress
 import java.text.SimpleDateFormat
 import java.util.function.{BiConsumer, Consumer}
 
 import com.typesafe.scalalogging.LazyLogging
+import fr.limsi.iles.cpm.corpus.CorpusManager
 import org.slf4j.LoggerFactory
 import org.yaml.snakeyaml.Yaml
 import org.json._
 
+import scala.io.Source
 import scala.sys.process.Process
 
 /**
@@ -45,6 +47,28 @@ object Log {
 }
 
 object Utils extends LazyLogging{
+
+  def getOwner(filepath:String):(String,String)={
+    try{
+      val infos = Process("namei -o "+filepath).!!.split("\n").takeRight(1)(0).trim.split("""\s+""")
+      (infos(1),infos(2))
+    }catch {
+      case e : Throwable => logger.error("Error when trying to get owner for file "+filepath); ("","")
+    }
+
+  }
+
+  def yamlTabFixLoad(yamlFilePath:String):java.util.Map[String,Any]={
+    val yaml = new Yaml()
+    val reader = Source.fromFile(yamlFilePath)
+    val lines = reader.getLines().mkString("\n")
+    reader.close()
+    yaml.load(lines.replace("\t","  ")).asInstanceOf[java.util.Map[String,Any]]
+  }
+
+  def yamlTabFixLoad(yamlFile:java.io.File):java.util.Map[String,Any]={
+    yamlTabFixLoad(yamlFile.getCanonicalPath)
+  }
 
   def getNamespace(offset:Int):String={
     val d0 = offset/1000000
@@ -99,11 +123,13 @@ object Utils extends LazyLogging{
   }
 
   def checkValidPath(path:String):Boolean={
-    val resdir = ConfManager.get("default_result_dir").toString
-    val corpusdir = ConfManager.get("default_corpus_dir").toString
+    val resdir = ConfManager.get("result_dir").toString
+    val corpusdirs = CorpusManager.getDirs
     try{
       val normalizedpath = (new File(path)).getCanonicalPath
-      normalizedpath.startsWith(resdir) || normalizedpath.startsWith(corpusdir)
+      normalizedpath.startsWith(resdir) || corpusdirs.find((corpusdir)=>{
+        normalizedpath.startsWith(corpusdir)
+      }).isDefined
     }catch {
       case e: Throwable => logger.error("invalid path " + path); false
     }
@@ -295,6 +321,9 @@ case class YamlNull() extends YamlElt
 case class YamlUnknown(obj:Any) extends YamlElt
 
 object YamlElt{
+
+
+
   def fromJava(thing:Any) : YamlElt= {
     if(thing!=null){
       if(thing.isInstanceOf[java.util.Map[String,Any]]){

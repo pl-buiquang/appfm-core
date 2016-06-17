@@ -54,6 +54,7 @@ abstract class AbstractModuleVal(val moduledef:ModuleDef,val conf:Option[java.ut
   }
   def toProcess(parentProcess:Option[AbstractProcess]):AbstractProcess
   def getNbChildren():Int
+  def dependsOn(modulename:String):Boolean
 }
 
 
@@ -197,6 +198,12 @@ case class ModuleVal(override val namespace:String,override val moduledef:Module
       agg+modval.getNbChildren()
     })
   }
+
+  override def dependsOn(modulename: String): Boolean = {
+    moduledef.name == modulename || this.moduledef.exec.exists(modval=>{
+      modval.dependsOn(modulename)
+    })
+  }
 }
 
 
@@ -223,6 +230,10 @@ case class CMDVal(override val namespace:String,override val conf:Option[java.ut
   }
 
   override def getNbChildren(): Int = 1
+
+  override def dependsOn(modulename: String): Boolean = {
+    false
+  }
 }
 
 
@@ -285,6 +296,13 @@ case class IFVal(override val namespace:String,override val conf:Option[java.uti
   }
 
   override def getNbChildren(): Int = 1 // this is a anonymous module
+  override def dependsOn(modulename: String): Boolean = {
+    AbstractParameterVal.paramToScalaListModval(inputs("ELSE").asInstanceOf[LIST[MODVAL]]).exists(modval=>{
+      modval.dependsOn(modulename)
+    }) || AbstractParameterVal.paramToScalaListModval(inputs("THEN").asInstanceOf[LIST[MODVAL]]).exists(modval=>{
+      modval.dependsOn(modulename)
+    })
+  }
 }
 
 object MAPVal extends LazyLogging{
@@ -378,6 +396,12 @@ case class MAPVal(override val namespace:String,override val conf:Option[java.ut
   }
 
   override def getNbChildren(): Int = 1
+
+  override def dependsOn(modulename: String): Boolean = {
+    AbstractParameterVal.paramToScalaListModval(inputs("RUN").asInstanceOf[LIST[MODVAL]]).exists(modval=>{
+      modval.dependsOn(modulename)
+    })
+  }
 }
 
 case class WALKMAPVal(override val namespace:String,override val conf:Option[java.util.Map[String,Any]]) extends AbstractModuleVal(WALKMAPDef,conf){
@@ -438,4 +462,10 @@ case class WALKMAPVal(override val namespace:String,override val conf:Option[jav
   }
 
   override def getNbChildren(): Int = 1
+
+  override def dependsOn(modulename: String): Boolean = {
+    AbstractParameterVal.paramToScalaListModval(inputs("RUN").asInstanceOf[LIST[MODVAL]]).exists(modval=>{
+      modval.dependsOn(modulename)
+    })
+  }
 }

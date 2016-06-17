@@ -28,74 +28,77 @@ object ModuleManager extends LazyLogging{
   val modulesCollection = DB.get("modules")
   private var modulesStatus : Map[String,String] = Map[String,String]()
 
+  private val _lock = new Object();
+
   /**
    * Check every modules found in the listed directory supposely containing modules definition/implementation/resources
    * Check for consistency
    */
   def init()={
     // list all modules and init independant fields
-    if(!ConfManager.confMap.containsKey("modules_dir")){
-      throw new Exception("no module directories set in configuration!")
-    }
+    _lock.synchronized{
+      if(!ConfManager.confMap.containsKey("modules_dir")){
+        throw new Exception("no module directories set in configuration!")
+      }
 
-    val list : java.util.ArrayList[String] = ConfManager.get("modules_dir").asInstanceOf[java.util.ArrayList[String]]
-    val iterator = list.iterator()
-    var roots = List[ModTree]()
-    while(iterator.hasNext){
-      val path = iterator.next()
-      val file = new File(path)
-      if(file.exists()){
-        findModuleConf(file,ModuleManager.initModule,ServiceManager.initService) match{
-          case Some(x:ModTree)=>{
-            roots = ModNode(file.getParent,x::modulestree.modItems) :: roots
-          }
-          case None => {
+      val list : java.util.ArrayList[String] = ConfManager.get("modules_dir").asInstanceOf[java.util.ArrayList[String]]
+      val iterator = list.iterator()
+      var roots = List[ModTree]()
+      while(iterator.hasNext){
+        val path = iterator.next()
+        val file = new File(path)
+        if(file.exists()){
+          findModuleConf(file,ModuleManager.initModule,ServiceManager.initService) match{
+            case Some(x:ModTree)=>{
+              roots = ModNode(file.getParent,x::modulestree.modItems) :: roots
+            }
+            case None => {
 
+            }
           }
         }
       }
-    }
-    modulestree = ModNode("",roots)
+      modulestree = ModNode("",roots)
 
-    var firstRun = true
-    var toRemoveFromTree = List[(String,String)]()
-    var discarded = ""
-    while(discarded != "" || firstRun){
-      if(discarded!=""){
-        val filepath = modules(discarded).confFilePath
-        modules -= discarded
-        toRemoveFromTree ::= (discarded,filepath)
-      }
-      discarded = ""
-      firstRun = false
-      var curmod = ""
-      var curmodconfpath = ""
-      try{
-        modules.values.filter(module => {!ModuleDef.builtinmodules.contains(module.name)}).foreach(m => {
-          curmod = m.name
-          curmodconfpath = m.confFilePath
-          val yaml = new Yaml()
-          val wd = (new File(m.confFilePath)).getParent
-          val ios = new FileInputStream(m.confFilePath)
-          val confMap = yaml.load(ios).asInstanceOf[java.util.Map[String,Any]]
-          m.exec = ModuleDef.initRun(confMap,m.inputs)
-          m.require = ModuleDef.initRequirement(confMap)
-        })
-      }catch{
-
-        case e:Throwable => {
-          discarded = curmod;
-          e.printStackTrace();
-          modulesStatus += (curmodconfpath -> e.getMessage)
-          logger.error("error when initiation exec configuration for module "+curmod+" : "+e.getMessage+" \nThis module will therefore be discarded");
+      var firstRun = true
+      var toRemoveFromTree = List[(String,String)]()
+      var discarded = ""
+      while(discarded != "" || firstRun){
+        if(discarded!=""){
+          val filepath = modules(discarded).confFilePath
+          modules -= discarded
+          toRemoveFromTree ::= (discarded,filepath)
         }
+        discarded = ""
+        firstRun = false
+        var curmod = ""
+        var curmodconfpath = ""
+        try{
+          modules.values.filter(module => {!ModuleDef.builtinmodules.contains(module.name)}).foreach(m => {
+            curmod = m.name
+            curmodconfpath = m.confFilePath
+            val wd = (new File(m.confFilePath)).getParent
+            val confMap = Utils.yamlTabFixLoad(m.confFilePath)
+            m.exec = ModuleDef.initRun(confMap,m.inputs)
+            m.require = ModuleDef.initRequirement(confMap)
+          })
+        }catch{
+
+          case e:Throwable => {
+            discarded = curmod;
+            e.printStackTrace();
+            modulesStatus += (curmodconfpath -> e.getMessage)
+            logger.error("error when initiation exec configuration for module "+curmod+" : "+e.getMessage+" \nThis module will therefore be discarded");
+          }
+        }
+
       }
 
+      //modulestree = removeInModuleTree(toRemoveFromTree,modulestree).asInstanceOf[ModNode]
+
+      logger.info("Finished initializing modules")
+
     }
-
-    //modulestree = removeInModuleTree(toRemoveFromTree,modulestree).asInstanceOf[ModNode]
-
-    logger.info("Finished initializing modules")
   }
 
   def search(query:String):List[ModuleDef]={
@@ -158,6 +161,7 @@ object ModuleManager extends LazyLogging{
    * @return a string indicating if creation was a success, an error message otherwise
    */
   def createModule(name:String,folderpath:String,data:String)(implicit alreadyExistInTree:Boolean=false):String={
+
     val normalizeddata = data.replace("\t","  ")
     var response = new JSONObject()
     if(modules.contains(name)){
@@ -175,6 +179,7 @@ object ModuleManager extends LazyLogging{
               val bw = new BufferedWriter(new FileWriter(conffile))
               bw.write(normalizeddata)
               bw.close()
+              conffile.setWritable(true,false)
               val module = modules(name)
               module.exec = ModuleDef.initRun(map,module.inputs)
               module.require = ModuleDef.initRequirement(map)
@@ -211,7 +216,7 @@ object ModuleManager extends LazyLogging{
    * @param data
    * @return a string indicating if modification was a success, an error message otherwise
    */
-  def updateModule(name:String,data:String):String={
+  def updateModule(name:String,data:String,force:Boolean=false):String={
     val normalizeddata = data.replace("\t","  ")
     var response = new JSONObject()
 
@@ -234,6 +239,11 @@ object ModuleManager extends LazyLogging{
             var execisok = false
             try{
               val updatedmodule = modules(name)
+              val dependantModules = ModuleManager.findDependancies(updatedmodule)
+              if(!force && !dependantModules.isEmpty){
+                response.put("warning",dependantModules.mkString(","))
+                return response.toString()
+              }
               updatedmodule.exec = ModuleDef.initRun(map,updatedmodule.inputs)
               updatedmodule.require = ModuleDef.initRequirement(map)
               execisok = true
@@ -248,17 +258,21 @@ object ModuleManager extends LazyLogging{
                   bw.close()
                   updatesuccess = true
                 }else{
-                  response.put("error","cannot write to module defintion file!");
+                  val ownership = Utils.getOwner(conffile.getCanonicalPath)
+                  response.put("error","cannot write to module defintion file! this file belongs to user "+ownership._1+" and group "+ownership._2+
+                    "\nYou can ask the owner to set this file to the group "+sys.env("USER")+" and add writting permission");
                 }
               }catch{
                 case e:Throwable => modules -= name; response.put("error","message : "+e.getMessage); response.put("cause",e.getStackTrace.toString)
               }
             }else{
-              response.put("error","failed initializing run")
+              if(!response.has("error")){
+                response.put("error","failed initializing run")
+              }
             }
           }
           case None => {
-            response.put("error","invalid configuration")
+            response.put("error","module does not exist")
           }
         }
       }
@@ -281,6 +295,18 @@ object ModuleManager extends LazyLogging{
 
     response.toString()
 
+  }
+
+  def findDependancies(module:ModuleDef):List[String]={
+    modules.foldLeft(List[String]())((agg,el)=>{
+      if(el._2.exec.exists(modval=>{
+        modval.dependsOn(module.name)
+      })){
+        el._1::agg
+      }else{
+        agg
+      }
+    })
   }
 
   def updateModuleDisplay(name:String,data:String):String={
@@ -460,17 +486,22 @@ object ModuleManager extends LazyLogging{
     }else if(curFile.isDirectory){
       if(!Utils.checkValidPath(curFile.getCanonicalPath)){
         var list = List[ModTree]()
-        val iterator = curFile.listFiles().iterator
-        while(iterator.hasNext){
-          val file = iterator.next()
-          findModuleConf(file,f,g) match{
-            case Some(x:ModTree)=>{
-              list = x :: list
-            }
-            case None => {
+        val filelist = curFile.listFiles()
+        if(filelist!=null){
+          val iterator = filelist.iterator
+          while(iterator.hasNext){
+            val file = iterator.next()
+            findModuleConf(file,f,g) match{
+              case Some(x:ModTree)=>{
+                list = x :: list
+              }
+              case None => {
 
+              }
             }
           }
+        }else{
+          logger.warn("Couldn't list files at path "+curFile.getCanonicalPath)
         }
         if(list.length > 0)
           Some(ModNode(curFile.getName,list))
@@ -537,9 +568,7 @@ object ModuleManager extends LazyLogging{
         return Some(modulename)
       }
 
-      val yaml = new Yaml()
-      val ios = new FileInputStream(moduleConfFile)
-      val confMap = yaml.load(ios).asInstanceOf[java.util.Map[String,Any]]
+      val confMap = Utils.yamlTabFixLoad(moduleConfFile)
       initModule(modulename,confMap,moduleConfFile)
     }catch{
       case e: Throwable => e.printStackTrace(); logger.error("Wrong module defintion in "+moduleConfFile.getCanonicalPath+"\n"+e.getMessage+"\n This module will not be registered."); None

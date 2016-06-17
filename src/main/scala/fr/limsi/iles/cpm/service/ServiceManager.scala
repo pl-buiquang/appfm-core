@@ -6,7 +6,7 @@ import com.typesafe.scalalogging.LazyLogging
 import fr.limsi.iles.cpm.module.definition.ModuleDef
 import fr.limsi.iles.cpm.module.parameter.AbstractModuleParameter
 import fr.limsi.iles.cpm.module.value.AbstractParameterVal
-import fr.limsi.iles.cpm.utils.YamlElt
+import fr.limsi.iles.cpm.utils.{Utils, YamlElt}
 import org.json.JSONArray
 import org.yaml.snakeyaml.Yaml
 
@@ -97,9 +97,7 @@ object ServiceManager extends LazyLogging{
 
 
 
-      val yaml = new Yaml()
-      val ios = new FileInputStream(confFile)
-      val confMap = yaml.load(ios).asInstanceOf[java.util.Map[String,Any]]
+      val confMap = Utils.yamlTabFixLoad(confFile)
       initService(servicename,confMap,confFile)
     }catch{
       case e: Throwable => e.printStackTrace(); logger.error("Wrong service defintion in "+confFile.getCanonicalPath+"\n"+e.getMessage+"\n This service will not be registered."); false

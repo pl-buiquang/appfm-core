@@ -113,10 +113,10 @@ object ProcessRunManager extends LazyLogging{
               customresultdir = true
               x
             }else{
-              throw new Exception("invalid result directory. must be with "+ConfManager.get("default_result_dir").toString)
+              throw new Exception("invalid result directory. must be with "+ConfManager.get("result_dir").toString)
             }
           }
-          case _ => ConfManager.get("default_result_dir").toString+"/"+modulename
+          case _ => ConfManager.get("result_dir").toString+"/"+modulename
         }
       }
       case None => {

@@ -19,9 +19,10 @@ modules_dir :
 
 default_module_dir : /people/buiquang/projects/custom/cpm/modules
 
-default_result_dir : /people/buiquang/projects/custom/cpm/data/results
+result_dir : /people/buiquang/projects/custom/cpm/data/results
 
-default_corpus_dir : /people/buiquang/projects/custom/cpm/data/corpus
+corpus_dir :
+  - /people/buiquang/projects/custom/cpm/data/corpus
 
 
 # db info

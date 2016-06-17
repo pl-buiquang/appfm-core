@@ -54,11 +54,11 @@ object CPM extends App{
     ModuleManager.init()
 
     val withDocker = try {
-      "docker -v".!
+      "docker -v".! == 0 && "groups".!!.split("""\s+""").exists(_=="docker")
     }catch {
-      case e:Throwable => 1
+      case e:Throwable => false
     }
-    if(withDocker==0){
+    if(withDocker){
       dockerEnabled = true
     }
 

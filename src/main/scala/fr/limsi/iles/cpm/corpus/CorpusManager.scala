@@ -19,20 +19,28 @@ object CorpusManager{
 
   var cachelist : JSONObject = null
 
+  def getDirs:List[String]={
+    ConfManager.get("corpus_dir").asInstanceOf[java.util.ArrayList[String]].toArray(Array[String]()).toList
+  }
+
   def jsonExport(reload:Boolean)(implicit onlyInputs : Boolean = true) = {
     if(cachelist == null || reload){
-      val corpusrootfolder = new java.io.File(ConfManager.get("default_corpus_dir").toString)
-      val corpustree = buildJSONTree(corpusrootfolder)
 
+      val corpustrees = new JSONArray()
+      CorpusManager.getDirs.foreach(corpusdir=>{
+        val corpusrootfolder = new java.io.File(corpusdir)
+        val corpustree = buildJSONTree(corpusrootfolder)
+        corpustrees.put(corpustree)
+      })
       val mastertree = new JSONObject();
 
       if(!onlyInputs){
-        val resultsrootfolder = new java.io.File(ConfManager.get("default_result_dir").toString)
+        val resultsrootfolder = new java.io.File(ConfManager.get("result_dir").toString)
         val resulttree = buildJSONTree(resultsrootfolder)
         mastertree.put("results",resulttree.asInstanceOf[JSONObject].get(resulttree.asInstanceOf[JSONObject].keys().next()))
       }
 
-      mastertree.put("corpus",corpustree.asInstanceOf[JSONObject].get(corpustree.asInstanceOf[JSONObject].keys().next()))
+      mastertree.put("corpus",corpustrees)
       cachelist = mastertree
     }
     cachelist
