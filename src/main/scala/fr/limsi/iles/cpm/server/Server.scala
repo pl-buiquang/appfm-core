@@ -71,7 +71,7 @@ class RequestHandler extends Runnable with LazyLogging{
       // In order to display the 0-terminated string as a String,
       //  we omit the last byte from request
       //val stringinput = new String(request,0,request.length)
-      logger.info("Received request: ["
+      logger.debug("Received request: ["
         + stringinput  //  Creates a String from request, minus the last byte
         + "]")
 

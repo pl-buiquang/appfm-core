@@ -12,7 +12,7 @@ import org.yaml.snakeyaml.Yaml
 import org.json._
 
 import scala.io.Source
-import scala.sys.process.Process
+import scala.sys.process._
 
 /**
  * Created by buiquang on 9/22/15.
@@ -47,6 +47,17 @@ object Log {
 }
 
 object Utils extends LazyLogging{
+
+  def getMemUsage():Int={
+    //val meminfo = ("free" #| "sed -n 3p" #| "awk '{print $3,$4}'" !!).trim.split("""\s+""")
+    val meminfo = Process(Seq("sh",ConfManager.get("cpm_home_dir")+"/scripts/getmeminfo.sh")).!!.trim.split("""\s+""")
+    if(meminfo.length!=2){
+      throw new Exception("couldn't evaluate memory info")
+    }
+    val used = meminfo(0).toInt
+    val free = meminfo(1).toInt
+    (used*100)/(used+free)
+  }
 
   def getOwner(filepath:String):(String,String)={
     try{

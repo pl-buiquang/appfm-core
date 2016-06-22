@@ -70,12 +70,23 @@ object CLInterpreter extends LazyLogging{
           }
           interpretFileSystemCommands(moreargs,data)
         }
-        case "restart" =>
+        case "restart" => {
           "Restart cpm"
+        }
+        case "resourceusage" => {
+          val json = new JSONObject()
+          val meminfo :String = try{
+            Utils.getMemUsage().toString+"%"
+          }catch{
+            case e:Throwable=> "?"
+          }
+          val procinfo = ProcessManager.getLoad()
+          json.put("proc",procinfo)
+          json.put("mem",meminfo)
+          json.toString()
+        }
         case "test" => {
-          ModuleManager.modules.foldLeft("")((output,module)=>{
-            output + "\n"+module._1+" : "+ModuleManager.findDependancies(module._2).mkString(",")
-          })
+          Utils.getMemUsage().toString
         }
         case _ => "No such method!"
       }

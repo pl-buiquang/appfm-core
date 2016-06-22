@@ -153,6 +153,10 @@ object ProcessManager extends Thread with LazyLogging {
   var masterProcessQueue:mutable.Queue[MasterProcessShell] = mutable.Queue[MasterProcessShell]()
   var runningProcessGrid = mutable.ArrayBuffer[ProcessCMDMessage]()
 
+  def getLoad():String={
+    runningProcess.toString+"/"+maxProcess.toString
+  }
+
   def addMasterToQueue(process:MasterProcessShell):Boolean={
     ProcessManager.processQueue.synchronized{
       logger.debug("Acquired lock processQueue")
