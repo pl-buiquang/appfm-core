@@ -931,6 +931,7 @@ class CMDProcess(override val moduleval:CMDVal,override val parentProcess:Option
 
       val unique = (env.resolveValueToString(moduleval.inputs("CONTAINED").toYaml()) == "true")
       val cmd = env.resolveValueToString(moduleval.inputs("CMD").asString()).replace("\\$","$")
+      val nthreads = env.resolveValueToString(moduleval.inputs("NTHREADS").asString()).toInt
 
       val image = if(dockerimagename!=""){
         Some(dockerimagename)
@@ -952,7 +953,8 @@ class CMDProcess(override val moduleval:CMDVal,override val parentProcess:Option
         runfolder,
         env.resolveValueToString(moduleval.inputs("DOCKER_OPTS").asString()),
         unique,
-        "STARTED"
+        "STARTED",
+        nthreads
       )
 
       logger.info("sending command to be executed : "+cmd+"\n")

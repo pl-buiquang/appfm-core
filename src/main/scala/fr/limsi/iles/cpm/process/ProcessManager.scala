@@ -27,7 +27,8 @@ object ProcessCMDMessage{
       new File(frames("RUN")),
       frames("OPT"),
       frames("UNIQ").toBoolean,
-      frames("STATUS")
+      frames("STATUS"),
+      frames("NTHREADS").toInt
     )
   }
 
@@ -39,7 +40,7 @@ object ProcessCMDMessage{
   }
 }
 
-class ProcessCMDMessage(val id:UUID,val namespace:String,val processPort:String,val cmd:String,val dockerimagename:Option[String],val deffolder:File,val runfolder:File,val dockeropts:String,val unique:Boolean,val status:String){
+class ProcessCMDMessage(val id:UUID,val namespace:String,val processPort:String,val cmd:String,val dockerimagename:Option[String],val deffolder:File,val runfolder:File,val dockeropts:String,val unique:Boolean,val status:String,val nthreads:Int){
   var process : Option[Process] = None
   def format():String={
     val dockimg = if(dockerimagename.isDefined){
@@ -55,7 +56,8 @@ class ProcessCMDMessage(val id:UUID,val namespace:String,val processPort:String,
       "==DEF=="+deffolder.getCanonicalPath+"==END_DEF=="+
       "==RUN=="+runfolder.getCanonicalPath+"==END_RUN=="+
       "==OPT=="+dockeropts+"==END_OPT=="+
-      "==UNIQ=="+String.valueOf(unique)+"==END_UNIQ=="
+      "==UNIQ=="+String.valueOf(unique)+"==END_UNIQ=="+
+      "==NTHREADS=="+String.valueOf(nthreads)+"==END_NTHREADS=="
   }
 
   val message = format()
@@ -79,7 +81,7 @@ class ProcessCMDMessage(val id:UUID,val namespace:String,val processPort:String,
 
 class ExecutableProcessCMDMessage(processcmdmessage:ProcessCMDMessage) extends LazyLogging{
   def execute()={
-    ProcessManager.runningProcess += 1
+    ProcessManager.runningProcess += processcmdmessage.nthreads
     // if non docker , create new thread else run docker
     var process :Process = null
     val containername = if(processcmdmessage.dockerimagename.isDefined){
@@ -238,7 +240,7 @@ object ProcessManager extends Thread with LazyLogging {
           logger.debug("Waiting for lock processQueue")
           ProcessManager.processQueue.synchronized{
             logger.debug("Acquired lock processQueue")
-            runningProcess -= 1
+            runningProcess -= processmessage.nthreads
             logger.debug("nb running process is now : "+runningProcess)
             logger.debug("Waiting for lock containerMap")
             ProcessManager.containersmap.synchronized{

@@ -485,6 +485,20 @@ object CLInterpreter extends LazyLogging{
             jsonError("missing argument")
           }
         }
+        case "test"=>{
+          if(args.size > 1){
+            ServiceManager.services.get(args(1)) match {
+              case Some(service)=>{
+                val json = new JSONObject()
+                json.put("result",service.testService())
+                json.toString()
+              }
+              case None => jsonError("unknwon service")
+            }
+          }else{
+            jsonError("missing argument")
+          }
+        }
         case "status"=>{
           if(args.size > 1){
             ServiceManager.services.get(args(1)) match {

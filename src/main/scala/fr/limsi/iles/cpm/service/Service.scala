@@ -96,6 +96,17 @@ class Service(val definitionPath:String,
     true
   }
 
+  def testService(): String ={
+    if(test.isDefined){
+      val env = initEnv
+      val absolutecmd = test.get.replace("\n"," ").replaceAll("^\\./",getDefDir+"/")
+      val cmdtolaunch = "python "+ConfManager.get("cpm_home_dir")+"/"+ConfManager.get("shell_exec_bin")+" "+absolutecmd
+      Process(cmdtolaunch,new java.io.File(getDefDir)).!!
+    }else{
+      "no test command defined"
+    }
+  }
+
   def stop():Boolean={
     _lock.synchronized{
       val env = initEnv
@@ -137,16 +148,22 @@ class Service(val definitionPath:String,
   }
 
   def toJson : JSONObject = {
+    val env = initEnv
     val json = new JSONObject()
     json.put("name",name)
     json.put("desc",desc)
+    json.put("test",test.isDefined)
     if(log.isDefined){
-      json.put("log",log.get)
+      json.put("log",env.resolveValueToString(log.get))
     }
     json.put("status",_isRunning)
     val outputsjson = new JSONObject()
     outputs.foreach(output=>{
-      outputsjson.put(output._1,output._2.toJson)
+      val jsonparamval = output._2.toJson
+      if(jsonparamval.has("value")){
+        jsonparamval.put("value",env.resolveValueToString(jsonparamval.get("value").asInstanceOf[String]))
+      }
+      outputsjson.put(output._1,jsonparamval)
     })
     json.put("outputs",outputsjson)
     json

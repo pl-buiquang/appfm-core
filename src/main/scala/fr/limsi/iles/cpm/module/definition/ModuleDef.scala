@@ -281,6 +281,9 @@ object ModuleDef extends LazyLogging{
   def initCMDInputs()={
     var x = Map[String,AbstractModuleParameter]()
     x += ("CMD"->new ModuleParameter[VAL]("VAL",None,None,None))
+    val nthreads = VAL(None,None)
+    nthreads.fromYaml("1")
+    x += ("NTHREADS"->new ModuleParameter[VAL]("VAL",None,None,None,Some(nthreads)))
     val forcecontainerized = VAL(None,None)
     forcecontainerized.fromYaml("false")
     x += ("CONTAINED"->new ModuleParameter[VAL]("VAL",None,None,None,Some(forcecontainerized)))
