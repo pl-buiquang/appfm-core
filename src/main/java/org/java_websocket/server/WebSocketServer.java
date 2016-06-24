@@ -165,6 +165,7 @@ public abstract class WebSocketServer extends WebSocketAdapter implements Runnab
 
 		decoders = new ArrayList<WebSocketWorker>( decodercount );
 		buffers = new LinkedBlockingQueue<ByteBuffer>();
+		System.err.println(decodercount);
 		for( int i = 0 ; i < decodercount ; i++ ) {
 			WebSocketWorker ex = new WebSocketWorker();
 			decoders.add( ex );

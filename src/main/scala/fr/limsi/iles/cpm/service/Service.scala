@@ -99,7 +99,7 @@ class Service(val definitionPath:String,
   def testService(): String ={
     if(test.isDefined){
       val env = initEnv
-      val absolutecmd = test.get.replace("\n"," ").replaceAll("^\\./",getDefDir+"/")
+      val absolutecmd = env.resolveValueToString(test.get).replace("\n"," ").replaceAll("^\\./",getDefDir+"/")
       val cmdtolaunch = "python "+ConfManager.get("cpm_home_dir")+"/"+ConfManager.get("shell_exec_bin")+" "+absolutecmd
       Process(cmdtolaunch,new java.io.File(getDefDir)).!!
     }else{
