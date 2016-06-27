@@ -98,10 +98,10 @@ object DockerManager extends LazyLogging{
 
 
     runOnlyOneProcessAtATime.synchronized{
-      val freemem = getFreeMemory()
+      /*val freemem = getFreeMemory()
       if (freemem < 500){
         cleanUnusedContainer()
-      }
+      }*/
       val containerName = DockerManager.serviceRun(imagename,foldersync,dockeropts,unique)
       val absolutecmd = cmd.replace("\n"," ").replaceAll("^\\./",foldersync.getCanonicalPath+"/")
       val dockercmd = "docker exec -td "+containerName+" /home/pshell/bin/cpm-process-shell.py true "+pid.toString+" "+name+" "+port+" "+workingdir.getCanonicalPath+" "+absolutecmd
