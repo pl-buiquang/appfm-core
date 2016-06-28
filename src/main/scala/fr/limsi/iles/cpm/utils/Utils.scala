@@ -137,9 +137,13 @@ object Utils extends LazyLogging{
     }
   }
 
-  def checkValidPath(path:String):Boolean={
+  def checkValidPath(path:String,includeModules:Boolean=false):Boolean={
     val resdir = ConfManager.get("result_dir").toString
-    val modulesdirs = ModuleManager.getDirs
+    val modulesdirs = if(includeModules){
+      ModuleManager.getDirs
+    }else{
+      List[String]()
+    }
     val corpusdirs = CorpusManager.getDirs
     try{
       val normalizedpath = (new File(path)).getCanonicalPath

@@ -273,7 +273,7 @@ object AbstractProcess extends LazyLogging{
         if(!(new java.io.File(el._2.asString())).exists()){
           throw new Exception(el._2.asString() + " does not exist! Aborting run")
         }
-        if(!Utils.checkValidPath(el._2.asString())){
+        if(!Utils.checkValidPath(el._2.asString(),true)){
           throw new Exception(el._2.asString() + " is not an allowed path ! Aborting run")
         }
       }
