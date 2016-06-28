@@ -7,6 +7,7 @@ import java.util.function.{BiConsumer, Consumer}
 
 import com.typesafe.scalalogging.LazyLogging
 import fr.limsi.iles.cpm.corpus.CorpusManager
+import fr.limsi.iles.cpm.module.definition.ModuleManager
 import org.slf4j.LoggerFactory
 import org.yaml.snakeyaml.Yaml
 import org.json._
@@ -119,7 +120,10 @@ object Utils extends LazyLogging{
         if(source.head.isFile){
           val file = source.head
           source = source.tail
-          file
+          regex.r.findFirstIn(file.getName) match {
+            case None => take(regex)
+            case Some(x:String) => file
+          }
         }else{
           source = source.head.listFiles().toList ++ source.tail
           take(regex)
@@ -135,10 +139,11 @@ object Utils extends LazyLogging{
 
   def checkValidPath(path:String):Boolean={
     val resdir = ConfManager.get("result_dir").toString
+    val modulesdirs = ModuleManager.getDirs
     val corpusdirs = CorpusManager.getDirs
     try{
       val normalizedpath = (new File(path)).getCanonicalPath
-      normalizedpath.startsWith(resdir) || corpusdirs.find((corpusdir)=>{
+      normalizedpath.startsWith(resdir) || (modulesdirs ++ corpusdirs).find((corpusdir)=>{
         normalizedpath.startsWith(corpusdir)
       }).isDefined
     }catch {

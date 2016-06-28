@@ -30,6 +30,10 @@ object ModuleManager extends LazyLogging{
 
   private val _lock = new Object();
 
+  def getDirs:List[String]={
+    ConfManager.get("modules_dir").asInstanceOf[java.util.ArrayList[String]].toArray(Array[String]()).toList
+  }
+
   /**
    * Check every modules found in the listed directory supposely containing modules definition/implementation/resources
    * Check for consistency
