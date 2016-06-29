@@ -39,7 +39,7 @@ class Service(val definitionPath:String,
   def initEnv : RunEnv = {
     val env = new RunEnv(Map[String,AbstractParameterVal]())
     val resdir = DIR(None,None)
-    resdir.fromYaml(ConfManager.get("result_dir"))
+    resdir.fromYaml(ConfManager.get("result_dir").toString)
     env.setVar("_RESULT_DIR",resdir)
     val corpusdir = LIST[DIR](None,None)
     corpusdir.fromYaml(ConfManager.get("corpus_dir").asInstanceOf[java.util.ArrayList[String]])
@@ -48,8 +48,15 @@ class Service(val definitionPath:String,
     defdir.fromYaml(getDefDir)
     env.setVar("_DEF_DIR",defdir)
     val maxthreads = VAL(None,None)
-    maxthreads.fromYaml(ConfManager.get("maxproc"))
+    maxthreads.fromYaml(ConfManager.get("maxproc").toString)
     env.setVar("_MAX_THREADS",maxthreads)
+    val resourcesdir = VAL(None,None)
+    val resourcesdirval = ConfManager.get("resource_dir").toString+"/"+this.name
+    if(!(new java.io.File(resourcesdirval)).exists()){
+      (new java.io.File(resourcesdirval)).mkdirs();
+    }
+    resourcesdir.fromYaml(resourcesdirval);
+    env.setVar("_RESOURCE_DIR",resourcesdir)
     env
   }
 

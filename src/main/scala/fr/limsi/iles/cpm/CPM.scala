@@ -67,6 +67,9 @@ object CPM extends App{
       DockerManager.initCheckDefault()
     }
 
+    if(!(new java.io.File(ConfManager.get("resource_dir").toString)).canWrite()){
+      Log("Warning : Resource dir is not writable ! (Some services may not work)")
+    }
 
     // start the main loop server
     val port = ConfManager.get("cmd_listen_port").toString
