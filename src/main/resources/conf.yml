@@ -1,6 +1,6 @@
 # CPM Server Configuration
 
-cpm_home_dir : /vagrant
+cpm_home_dir : /home/paul/projects/custom/cpm
 
 # main port to connect client with
 cmd_listen_port : 5555
@@ -9,20 +9,22 @@ event_pub_port : 5858
 
 websocket_port : 8083
 
-maxproc : 20
+maxproc : 1
 
 # modules directory
 modules_dir :
-  - /vagrant/modules
+  - /home/paul/projects/custom/cpm/modules
+	- /home/paul/scratch
+
+corpus_dir :
+  - /home/paul/projects/custom/cpm/data/corpus
+  - /home/paul/test
+
+result_dir : /home/paul/projects/custom/cpm/data/results
+
+resource_dir : /home/paul/projects/custom/cpm/data/resources
 
 
-result_dir : /vagrant/data/results
-
-corpus_dir : 
-  - /vagrant/data/corpus
-
-
-resource_dir : /vagrant/data/resources
 
 # db info
 dbhost : localhost
