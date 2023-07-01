@@ -4,6 +4,7 @@
 ## Schema, Format
 if custom format / schema, explain it. describe spec (url, text, extern readme/man filepath)
 
+```yaml
 def :
   format :
     my-custom-format : explaination
@@ -11,7 +12,7 @@ def :
   schema :
     my-custom-format : explaination
     ...
-
+```
     
 
 ## Modules
